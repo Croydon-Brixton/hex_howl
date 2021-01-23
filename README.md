@@ -1,14 +1,26 @@
 # Hex Howl
 
- <a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
+<a href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg"></a>
 
 ## Requirements
+
 - Python 3.8+
 
 ## Getting started
 
+Call the following commands from the project directory
+
+```bash
+make env
+make vscode_pro
+make jupyter_pro
+```
+
+To format your code: `make format`  
+To lint your code: `make lint`
 
 ## Project Organization
+
 ```
 ├── LICENSE
 ├── Makefile           <- Makefile with commands like `make init` or `make lint-requirements`
@@ -44,8 +56,9 @@
 ```
 
 ## Code formatting
+
 To automatically format your code, make sure you have `black` installed (`pip install black`) and call
-```black . ``` 
+`black . `
 from within the project directory.
 
 ---
