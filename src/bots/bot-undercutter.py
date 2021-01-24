@@ -41,9 +41,11 @@ def undercutter_loop():
     our_orders.update()
     logger.debug("Updating PendingOrders")
     
+    positions = e.get_postions()
+    
     for instrument_id in INSTRUMENTS:
         price_book = e.get_last_price_book(instrument_id)
-    
+        
         # Check market vitals
         best_ask, best_bid, spread, midquote = get_vitals(price_book)
         
@@ -62,11 +64,16 @@ def undercutter_loop():
         logger.info(f"Using ask-price {ask_price} and bid-price {bid_price} for undercutting.")
         
         #####################
-        volume = 50         #
+        volume = 20         #
         #####################
         
         our_bid_id = our_orders.highest_bid_id(instrument_id)
         our_ask_id = our_orders.lowest_ask_id(instrument_id)
+        
+        # Check our positions
+        
+        position = positions[instrument_id]
+        
         
         if not our_bid_is_best:
             # Delete order if already is one, then place new
@@ -135,6 +142,8 @@ def check_positions():
     return (max_vol < 200)
 
 # 4. --- Start up bot ---
+
+logger.info(f'initial pnl {e.get_pnl()}')
 while True:
     try:
         '''
@@ -154,4 +163,5 @@ while True:
         '''
     except:
         pass
-    
+
+logger.info(f'final pnl {e.get_pnl()}')
