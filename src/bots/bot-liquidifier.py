@@ -79,6 +79,7 @@ def calculate_bid_vol_B(delta_from_bid_B, inventory_A, inventory_B):
     
     return int(vol)
 
+# 5. --- Combining price and volume settting for quote updating function --- 
 def calculate_quote(e):
     """Calculate prices and volumes for our quote in illiquid market"""
     # PRICE SETTING FOR ILLIQUID MARKET
@@ -111,8 +112,36 @@ def calculate_quote(e):
     assert 0 <= next_vol_bid_B <= MAX_VOLUME, f"Volume larger than max volume for bid B"
     
     return next_ask_B, next_vol_ask_B, next_bid_B, next_vol_bid_B
+
+# 6. --- Define soft hedging function ---
+def dissipate():
+    """Hedge our positions softly"""
     
-# 5. --- Put Bot together ---  
+    # See how hedged we are
+    pos = e.get_positions()
+    pos_diff = pos['PHILIPS_A'] + pos['PHILIPS_B'] # Get total position 
+
+    # Get market info for A
+    price_book = e.get_last_price_book('PHILIPS_A')
+    best_ask, best_bid, spread, midquote = get_vitals(price_book) # always buy or sell in A
+
+    if pos_diff > 0: # more in A, get rid of a
+        side, price = 'ask', best_bid
+        logger.info(f'More in A {pos_diff}, getting rid {pos}')
+    elif pos_diff < 0: # less in A, buy A
+        side, price = 'bid', best_ask
+        logger.info(f'Less in A {pos_diff}, buying {pos}')
+    else:
+        return True  # Don't place any orders
+
+    volume = abs(pos_diff)
+    #logger.debug(f'side : {side}, volume: {volume}, price {price}')
+    
+    e.insert_order('PHILIPS_A', price=price, volume=volume, side=side, order_type='ioc')
+    return False
+    
+
+# 7. --- Put Bot together ---  
 def market_making_loop():
     
     ask_timestamp = time.time()
@@ -163,34 +192,7 @@ def market_making_loop():
         # Soft hedging
         dissipate()
     
-        
-def dissipate():
-    """Hedge our positions softly"""
-    
-    # See how hedged we are
-    pos = e.get_positions()
-    pos_diff = pos['PHILIPS_A'] + pos['PHILIPS_B'] # Get total position 
-
-    # Get market info for A
-    price_book = e.get_last_price_book('PHILIPS_A')
-    best_ask, best_bid, spread, midquote = get_vitals(price_book) # always buy or sell in A
-
-    if pos_diff > 0: # more in A, get rid of a
-        side, price = 'ask', best_bid
-        logger.info(f'More in A {pos_diff}, getting rid {pos}')
-    elif pos_diff < 0: # less in A, buy A
-        side, price = 'bid', best_ask
-        logger.info(f'Less in A {pos_diff}, buying {pos}')
-    else:
-        return True  # Don't place any orders
-
-    volume = abs(pos_diff)
-    #logger.debug(f'side : {side}, volume: {volume}, price {price}')
-    
-    e.insert_order('PHILIPS_A', price=price, volume=volume, side=side, order_type='ioc')
-    return False
-    
-    
+# 8. --- Main loop --- 
 if __name__ == "__main__":
     
     while True:
@@ -198,5 +200,3 @@ if __name__ == "__main__":
             market_making_loop()
         except Exception as expt:
             logger.info('Exception in Main {}'.format(expt))
-            #pass
-    
