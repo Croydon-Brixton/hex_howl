@@ -14,14 +14,10 @@ class Inventory:
         return {"id" : order.order_id, "price": order.price, "volume": order.volume, "instrument": order.instrument_id}
         
     def update(self):
-        
         for instrument in INSTRUMENTS:
             self.orders = list(self.exchange.get_outstanding_orders(instrument).values())
             self.asks[instrument] = sorted([order for order in self.orders if order.side == "ask"], key = x["price"])
             self.bids[instrument] = sorted([order for order in self.orders if order.side == "bid"], key = x["price"])
-           
-        
-        self.orders = {instrument: list(self.exchange.get_outstanding_orders(instrument).values()) for instrument in INSTRUMENTS } 
     
     def highest_bid(self, instrument: str):
         prices = [order.price for order in self.orders[instrument] if order.side == 'bid']
