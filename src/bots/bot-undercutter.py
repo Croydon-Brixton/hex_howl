@@ -73,6 +73,8 @@ def undercutter_loop():
         # Check our positions
         
         position = positions[instrument_id]
+        logger.info(position)
+        max_position = 250
         
         
         if not our_bid_is_best:
@@ -81,7 +83,8 @@ def undercutter_loop():
                 logger.info(f"Deleting bid {our_bid_id}")
                 delete = e.delete_order(instrument_id, order_id=our_bid_id)
             logger.info(f"Ordering bid at {bid_price} for {instrument_id}")
-            e.insert_order(instrument_id, price=bid_price, volume=volume, side="bid", order_type="limit")
+            if position < max_position:
+                e.insert_order(instrument_id, price=bid_price, volume=volume, side="bid", order_type="limit")
         else:
             # keep it that way
             logger.debug("Our bid is best")
@@ -93,7 +96,8 @@ def undercutter_loop():
                 delete = e.delete_order(instrument_id, order_id=our_ask_id)
                 logger.info(f"Deleting ask {our_ask_id}")
             logger.info(f"Ordering ask at {ask_price} for {instrument_id}")
-            e.insert_order(instrument_id, price=ask_price, volume=volume, side="ask", order_type="limit")
+            if position > (-max_position):
+                e.insert_order(instrument_id, price=ask_price, volume=volume, side="ask", order_type="limit")
         else:
             # keep it that way
             logger.debug("Our ask is best")
