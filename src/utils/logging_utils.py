@@ -22,9 +22,9 @@ def initialize_logger(logger, log_name=None):
         if not os.path.exists(LOG_DIR / f"{log_name}"):
             os.mkdir(LOG_DIR / f"{log_name}")
             
-        file_handler = logging.handlers.RotatingFileHandler(LOG_DIR / f"{log_name}/{log_name}.log", maxBytes=10240, backupCount=5)
+        file_handler = logging.handlers.RotatingFileHandler(LOG_DIR / f"{log_name}/{log_name}.log", maxBytes=1000240, backupCount=5)
         file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.INFO)
+        file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
     
     # Add console handler for logs:

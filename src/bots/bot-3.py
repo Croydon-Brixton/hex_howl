@@ -12,7 +12,7 @@ logger = logging.getLogger("bot3")
 client_logger = logging.getLogger("client")
 
 initialize_logger(logger, log_name="bot3")
-#initialize_logger(client_logger, log_name="bot3")
+initialize_logger(client_logger, log_name="bot3")
 
 logger.info("Logging setup was successful.")
 
@@ -93,13 +93,17 @@ def accumulate():
             
         elif DeltaB > 0:
             
-            delta = DeltaA
-            bbid = best_bid_B
-            bask = best_ask_A
+            delta = DeltaB
+            bbid = best_bid_A
+            bask = best_ask_B
             ibuy, isell = 'PHILIPS_B', 'PHILIPS_A'
         
         
-        
+        logger.info('best_ask_A,best_bid_A,spread_A = {}, {}, {}'.format(best_ask_A.price,best_bid_A.price,spread_A))
+        logger.info('best_ask_B,best_bid_B,spread_B = {}, {}, {}'.format(best_ask_B.price,best_bid_B.price,spread_B))
+        logger.info('bbid, bask, ibuy = {}, {}, {}'.format(bbid.price, bask.price, ibuy))
+    
+        return    
         
         positions = e.get_positions()
         winded = (positions[ibuy] -positions[isell])/1000
@@ -118,12 +122,18 @@ def accumulate():
                 # First I want to buy B at the price quoted 
                 buy = e.insert_order(ibuy, price=bask.price, volume=volume, side='bid', order_type='ioc')
                 logger.info('Trade Succeeded buy: volume {}'.format(volume))
+            
+            except Exception as expt:
+                logger.info('Buy order failed - too slow? {}'.format(expt))
                 
-                trades = e.poll_new_trades(ibuy)
+            
                 
-                vol_bought = 0
-                # Check trade went through
-                if len(trades)>0:
+            trades = e.poll_new_trades(ibuy)
+            
+            vol_bought = 0
+            # Check trade went through
+            if len(trades)>0:
+                try:
                     # Find out exact valume of successful trade
                     for t in trades:
                         if t.order_id == buy:
@@ -131,12 +141,11 @@ def accumulate():
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
                     logger.info('Trade Succeeded sell: volume {}'.format(volume))
-                else:
-                    logger.debug('trades {}'.format( trades))
                 
-                
-            except Exception as expt:
-                logger.info('Buy order failed - too slow? {}'.format(expt))
+                except Exception as expt:
+                    logger.info('Sell order failed - too slow? {}'.format(expt))
+            else:
+                logger.debug('trades {}'.format( trades))
             
     else:
         pass
