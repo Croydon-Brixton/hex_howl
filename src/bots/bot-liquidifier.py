@@ -40,11 +40,11 @@ def calculate_ask_price(best_ask_A, best_ask_B, undercut_ask_B):
     """Calculate ask price for quote on illiquid market B"""
     if best_ask_A >= best_ask_B:
         next_ask_B = best_ask_A
-        logger.info(f"Ask price B pinned to {next_ask_B} vs {best_ask_B}")
+        logger.debug(f"Ask price B pinned to {next_ask_B} vs {best_ask_B}")
     else:
         mean_AB = 0.5*(best_ask_A + best_ask_B)
         next_ask_B = max(undercut_ask_B, mean_AB)
-        logger.info(f"Ask price B undercut to {next_ask_B} vs {best_ask_B}")
+        logger.debug(f"Ask price B undercut to {next_ask_B} vs {best_ask_B}")
     return next_ask_B
         
 def calculate_bid_price(best_bid_A, best_bid_B, undercut_bid_B):
@@ -52,10 +52,10 @@ def calculate_bid_price(best_bid_A, best_bid_B, undercut_bid_B):
     if best_bid_A > best_bid_B:
         mean_AB = 0.5*(best_bid_A + best_bid_B)
         next_bid_B = min(undercut_bid_B, mean_AB)
-        logger.info(f"Bid price B undercut (raised) to {next_bid_B} vs {best_bid_B}")
+        logger.debug(f"Bid price B undercut (raised) to {next_bid_B} vs {best_bid_B}")
     else:
         next_bid_B = best_bid_A
-        logger.info(f"Bid price B pinned to {next_bid_B} vs {best_bid_B}")
+        logger.debug(f"Bid price B pinned to {next_bid_B} vs {best_bid_B}")
     return next_bid_B
         
 # 4. --- Define volume setting functions ---        
@@ -64,20 +64,20 @@ def calculate_ask_vol_B(delta_from_ask_B, inventory_A, inventory_B):
     
     # Case: We are buying A and selling B
     winding = (inventory_A - inventory_B)/1000  # -1 (Not invested in A)  to 1 (INVESTED IN A)  # TO DO
-    delta_from_ask_B = delta_from_ask_B +0.001
-    vol = np.round( MAX_VOLUME * (-np.sin(winding * np.pi/2)/2 + .5)**(VOL_SCALE_PARAM/(delta_from_ask_B)))
+    scale_param = VOL_SCALE_PARAM/(delta_from_ask_B + 0.01)
+    vol = np.round( MAX_VOLUME * (-np.sin(winding * np.pi/2)/2 + .5)**scale_param)
     
-    return vol
+    return int(vol)
 
 def calculate_bid_vol_B(delta_from_bid_B, inventory_A, inventory_B):
     ''' Calcululate volume of bid (we are buying B and selling A) '''
     
     # Case: We are buying B and selling A
     winding = (inventory_B - inventory_A)/1000  # -1 to 1
-    delta_from_ask_B = delta_from_ask_B +0.001
-    vol = np.round( MAX_VOLUME * (-np.sin(winding * np.pi/2)/2 + .5)**(VOL_SCALE_PARAM/delta_from_bid_B))
+    scale_param = VOL_SCALE_PARAM/(delta_from_bid_B + 0.01)
+    vol = np.round( MAX_VOLUME * (-np.sin(winding * np.pi/2)/2 + .5)**scale_param)
     
-    return vol
+    return int(vol)
 
 def calculate_quote(e):
     """Calculate prices and volumes for our quote in illiquid market"""
@@ -94,7 +94,7 @@ def calculate_quote(e):
     next_bid_B = calculate_bid_price(best_bid_A, best_bid_B, undercut_bid_B)
     # Calculate cross-market spreads we're making
     delta_from_bid_B = best_bid_A - next_bid_B  # we sell at A and buy at B
-    delta_from_ask_B = best_ask_B - best_ask_A  # we buy at A and sell at B
+    delta_from_ask_B = next_ask_B - best_ask_A  # we buy at A and sell at B
     # Sanity check that we never offer a negative delta trade for us
     assert delta_from_bid_B >= 0, f"Negative delta from bid B: {delta_from_bid_B}"
     assert delta_from_ask_B >= 0, f"Negative delta from ask B: {delta_from_ask_B}"
@@ -119,13 +119,13 @@ def market_making_loop():
     bid_timestamp = time.time()
     
     while True:
-        # UPDATING BID
-        next_ask_B, next_vol_ask_B, next_bid_B, next_vol_bid_B = calculate_quote(e)
-        
-        # UPDATING QUOTES
+        # UPDATING CURRENT ORDERS
         our_orders.update()
         our_bid_id = our_orders.highest_bid_id("PHILIPS_B")
         our_ask_id = our_orders.lowest_ask_id("PHILIPS_B")
+        
+        # UPDATE OUR QUOTE
+        next_ask_B, next_vol_ask_B, next_bid_B, next_vol_bid_B = calculate_quote(e)
         
         ask_has_expired = time.time() - ask_timestamp > QUOTE_TIME_LIMIT
         ask_was_fulfilled = our_ask_id is None
