@@ -4,10 +4,9 @@ class OrderBook:
     
     def __init__(self, exchange):
         
-        self.orders = None # current orders
         self.exchange = exchange
-        self.update()
-        self.n_limits = None # 
+        self.orders = None # current orders
+        self.update() 
         
     @staticmethod
     def _order_to_dict(order):
