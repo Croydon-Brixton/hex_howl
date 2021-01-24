@@ -12,7 +12,7 @@ logger = logging.getLogger("bot3")
 client_logger = logging.getLogger("client")
 
 initialize_logger(logger, log_name="bot3")
-initialize_logger(client_logger, log_name="bot3")
+#initialize_logger(client_logger, log_name="bot3")
 
 logger.info("Logging setup was successful.")
 
@@ -106,7 +106,7 @@ def accumulate():
         
         paramb = 0.5
         max_volume = 30
-        max_volume = round(max_volume * vol_f_const(winded, 0.9))
+        max_volume = round(max_volume * vol_f_const(winded, 0.8))
         
         volume = min([bbid.volume,bask.volume,max_volume])
         
@@ -117,7 +117,7 @@ def accumulate():
             try:
                 # First I want to buy B at the price quoted 
                 buy = e.insert_order(ibuy, price=bask.price, volume=volume, side='bid', order_type='ioc')
-                #logger.info('Trade Succeeded sell: volume {}'.format(volume))
+                logger.info('Trade Succeeded buy: volume {}'.format(volume))
                 
                 trades = e.poll_new_trades(ibuy)
                 
@@ -130,9 +130,10 @@ def accumulate():
                             vol_bought = t.volume
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
+                    logger.info('Trade Succeeded sell: volume {}'.format(volume))
                 else:
                     logger.debug('trades {}'.format( trades))
-                #logger.info('Trade Succeeded buy: volume {}'.format(volume))
+                
                 
             except Exception as expt:
                 logger.info('Buy order failed - too slow? {}'.format(expt))
@@ -174,7 +175,6 @@ while True:
             #print(1)
             accumulate()
         dissapate()
-        time.sleep(0.001)
         '''
         for instrument_id in instruments:
             outstanding = e.get_outstanding_orders(instrument_id)
