@@ -81,7 +81,7 @@ def accumulate():
     DeltaB = best_bid_A.price - best_ask_B.price
     
     # Is there reason to arbitrage
-    if True:#:(DeltaA > 0) or (DeltaB > 0):
+    if (DeltaA > 0) or (DeltaB > 0):
         
         logger.info(f'Arbitrage')
     
@@ -91,7 +91,7 @@ def accumulate():
             bask = best_ask_A
             ibuy, isell = 'PHILIPS_A', 'PHILIPS_B'
             
-        elif True:#DeltaB > 0:
+        elif DeltaB > 0:
             
             delta = DeltaB
             bbid = best_bid_A
@@ -137,7 +137,7 @@ def accumulate():
                 logger.info('Buy order failed - too slow? {}'.format(expt))
             
         else:
-            logger.info('Volume: {}, Winded = {}, max_volume {}'.format(volume,winded, max_volume))
+            logger.info('Volume = {} (should say 0),  Winded = {}, max_volume {}'.format(volume,winded, max_volume))
     else:
         pass
         #logger.info(f'No arbitrage')
@@ -175,7 +175,7 @@ while True:
             #print(1)
             accumulate()
         dissapate()
-        time.sleep(5)
+        #time.sleep(5)
         '''
         for instrument_id in instruments:
             outstanding = e.get_outstanding_orders(instrument_id)
