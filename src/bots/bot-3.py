@@ -11,8 +11,8 @@ logger = logging.getLogger("bot3")
 # Client logger (from optiver)
 client_logger = logging.getLogger("client")
 
-initialize_logger(logger, log_name="bot1")
-initialize_logger(client_logger, log_name="bot1")
+initialize_logger(logger, log_name="bot3")
+initialize_logger(client_logger, log_name="bot3")
 
 logger.info("Logging setup was successful.")
 
@@ -66,10 +66,11 @@ def vol_f_const(winding, win_lim):
     if winding < -win_lim:
         vol = 1
     elif winding > win_lim:
+        print('bigger')
         vol = 0
     else:
         vol = -winding/win_lim/2 + 0.5
-    return round(vol)
+    return vol
 
 def accumulate():
     
@@ -98,17 +99,18 @@ def accumulate():
             ibuy, isell = 'PHILIPS_B', 'PHILIPS_A'
         
         
-        max_volume = 30
+        
         
         positions = e.get_positions()
         winded = (positions[ibuy] -positions[isell])/1000
         
         paramb = 0.5
-        max_volume =  max_volume * vol_f_const(winded, 0.9)
+        max_volume = 30
+        max_volume = round(max_volume * vol_f_const(winded, 0.9))
         
         volume = min([bbid.price,bask.price,max_volume])
         
-        logger.info('Volume: {}'.format(volume))
+        logger.debug('Volume: {}, Winded = {}, max_volume {}'.format(volume,winded, max_volume))
         
         if volume>0:
         
@@ -118,6 +120,7 @@ def accumulate():
                 #logger.info('Trade Succeeded sell: volume {}'.format(volume))
                 
                 trades = e.poll_new_trades(ibuy)
+                
                 vol_bought = 0
                 # Check trade went through
                 if len(trades)>0:
@@ -127,6 +130,8 @@ def accumulate():
                             vol_bought = t.volume
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
+                else:
+                    logger.debug('trades {}'.format( trades))
                 #logger.info('Trade Succeeded buy: volume {}'.format(volume))
                 
             except Exception as expt:
@@ -178,7 +183,7 @@ while True:
         '''
     except Exception as expt:
             if type(expt).__name__ == 'IndexError':
-                logger.info('Main Error {}'.format(expt))
+                pass #logger.info('Main Error {}'.format(expt))
             else:
                 logger.info('Main Error {}'.format(expt))
     

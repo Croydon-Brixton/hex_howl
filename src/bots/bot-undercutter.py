@@ -50,6 +50,7 @@ def undercutter_loop():
         bid, ask = calculate_bid_and_ask(spread,midquote,undercut_factor=UNDERCUT_FACTOR)
             
         if not our_ask_is_best:
+            # amend an order
             
             # update
             pass

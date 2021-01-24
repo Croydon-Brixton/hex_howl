@@ -12,10 +12,23 @@ class Inventory:
         return {"id" : order.order_id, "price": order.price, "volume": order.volume, "instrument": order.instrument_id}
         
     def update(self):
+        
+        for instrument in INSTRUMENTS:
+            orders = list(self.exchange.get_outstanding_orders(instrument).values())
+            self.asks[instrument] = sorted([order if order.side == "ask"], key = x["price"])
+            self.bids[instrument] = sorted([order if order.side == "bid"], key = x["price"])
+           
+        
         self.orders = {instrument: list(self.exchange.get_outstanding_orders(instrument).values()) for instrument in INSTRUMENTS } 
     
     def highest_bid(self, instrument: str):
         prices = [order.price for order in self.orders[instrument] if order.side == 'bid']
+        if len(prices) == 0:
+            return None
+        return max(prices)
+        
+    def highest_bid_id(self, instrument: str):
+        prices = [order.prices for order in self.orders[instrument] if order.side == 'bid']
         if len(prices) == 0:
             return None
         return max(prices)
@@ -25,6 +38,9 @@ class Inventory:
         if len(prices) == 0:
             return None
         return min(prices)
+        
+    def lowest_ask_id(self, instrument: str):
+        
     
     def spread(self,instrument: str):
         lowest_ask = self.lowest_ask(instrument)
