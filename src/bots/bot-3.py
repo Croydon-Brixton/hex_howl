@@ -12,7 +12,7 @@ logger = logging.getLogger("bot3")
 client_logger = logging.getLogger("client")
 
 initialize_logger(logger, log_name="bot3")
-initialize_logger(client_logger, log_name="bot3")
+#initialize_logger(client_logger, log_name="bot3")
 
 logger.info("Logging setup was successful.")
 
@@ -81,7 +81,7 @@ def accumulate():
     DeltaB = best_bid_A.price - best_ask_B.price
     
     # Is there reason to arbitrage
-    if (DeltaA > 0) or (DeltaB > 0):
+    if True:#:(DeltaA > 0) or (DeltaB > 0):
         
         logger.info(f'Arbitrage')
     
@@ -91,7 +91,7 @@ def accumulate():
             bask = best_ask_A
             ibuy, isell = 'PHILIPS_A', 'PHILIPS_B'
             
-        elif DeltaB > 0:
+        elif True:#DeltaB > 0:
             
             delta = DeltaB
             bbid = best_bid_A
@@ -99,18 +99,12 @@ def accumulate():
             ibuy, isell = 'PHILIPS_B', 'PHILIPS_A'
         
         
-        logger.info('best_ask_A,best_bid_A,spread_A = {}, {}, {}'.format(best_ask_A.price,best_bid_A.price,spread_A))
-        logger.info('best_ask_B,best_bid_B,spread_B = {}, {}, {}'.format(best_ask_B.price,best_bid_B.price,spread_B))
-        logger.info('bbid, bask, ibuy = {}, {}, {}'.format(bbid.price, bask.price, ibuy))
-    
-        #return    
-        
         positions = e.get_positions()
         winded = (positions[ibuy] -positions[isell])/1000
         
         paramb = 0.5
         max_volume = 30
-        max_volume = round(max_volume * vol_f_const(winded, 0.8))
+        max_volume = round(max_volume * vol_f_const(winded, 0.2))  # 0.1*500 is where it doesn't go any further
         
         volume = min([bbid.volume,bask.volume,max_volume])
         
@@ -122,31 +116,28 @@ def accumulate():
                 # First I want to buy B at the price quoted 
                 buy = e.insert_order(ibuy, price=bask.price, volume=volume, side='bid', order_type='ioc')
                 logger.info('Trade Succeeded buy: volume {}'.format(volume))
-            
-            except Exception as expt:
-                logger.info('Buy order failed - too slow? {}'.format(expt))
                 
-            
+                trades = e.poll_new_trades(ibuy)
                 
-            trades = e.poll_new_trades(ibuy)
-            
-            vol_bought = 0
-            # Check trade went through
-            if len(trades)>0:
-                try:
+                vol_bought = 0
+                # Check trade went through
+                if len(trades)>0:
                     # Find out exact valume of successful trade
                     for t in trades:
                         if t.order_id == buy:
                             vol_bought = t.volume
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
-                    logger.info('Trade Succeeded sell: volume {}, sell {}'.format(vol_bought, sell))
+                    logger.info('Trade Succeeded sell: volume {}'.format(volume))
+                else:
+                    logger.debug('trades {}'.format( trades))
                 
-                except Exception as expt:
-                    logger.info('Sell order failed - too slow? {}'.format(expt))
-            else:
-                logger.debug('trades {}'.format( trades))
+                
+            except Exception as expt:
+                logger.info('Buy order failed - too slow? {}'.format(expt))
             
+        else:
+            logger.info('Volume: {}, Winded = {}, max_volume {}'.format(volume,winded, max_volume))
     else:
         pass
         #logger.info(f'No arbitrage')
@@ -184,6 +175,7 @@ while True:
             #print(1)
             accumulate()
         dissapate()
+        time.sleep(5)
         '''
         for instrument_id in instruments:
             outstanding = e.get_outstanding_orders(instrument_id)
