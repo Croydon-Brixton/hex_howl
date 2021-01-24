@@ -144,7 +144,7 @@ while True:
             accumulate()
         dissapate()
         '''
-        time.sleep(1.0)
+        time.sleep(0.5)
         undercutter_loop()
         '''
         for instrument_id in instruments:

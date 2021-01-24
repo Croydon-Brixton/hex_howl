@@ -115,7 +115,7 @@ def accumulate():
             try:
                 # First I want to buy B at the price quoted 
                 buy = e.insert_order(ibuy, price=bask.price, volume=volume, side='bid', order_type='ioc')
-                logger.info('Trade Succeeded buy: volume {}'.format(volume))
+                logger.info('Trade Succeeded buy: volume {}, {}'.format(volume,buy))
                 
                 trades = e.poll_new_trades(ibuy)
                 
@@ -128,7 +128,7 @@ def accumulate():
                             vol_bought = t.volume
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
-                    logger.info('Trade Succeeded sell: volume {}'.format(volume))
+                    logger.info('Trade Succeeded sell: volume {}, {}'.format(volume,sell))
                 else:
                     logger.debug('trades {}'.format( trades))
                 
