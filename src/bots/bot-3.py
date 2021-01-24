@@ -104,7 +104,7 @@ def accumulate():
         
         paramb = 0.5
         max_volume = 30
-        max_volume = round(max_volume * vol_f_const(winded, 0.2))  # 0.1*500 is where it doesn't go any further
+        max_volume = round(max_volume * vol_f_const(winded, 0.2) * delta)  # 0.1*500 is where it doesn't go any further
         
         volume = min([bbid.volume,bask.volume,max_volume])
         
@@ -119,25 +119,17 @@ def accumulate():
                 
                 trades = e.poll_new_trades(ibuy)
                 
-                vol_bought = 0
-                # Check trade went through
-                if len(trades)>0:
-                    # Find out exact valume of successful trade
-                    for t in trades:
-                        if t.order_id == buy:
-                            vol_bought = t.volume
-                            
-                    sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
-                    logger.info('Trade Succeeded sell: volume {}, {}'.format(volume,sell))
-                else:
-                    logger.debug('trades {}'.format( trades))
+               
+                sell = e.insert_order(isell, price=bbid.price, volume=volume, side='ask', order_type='ioc')
+                logger.info('Trade Succeeded sell: volume {}, {}, credit {}'.format(volume,sell, bbid-bask))
+                
                 
                 
             except Exception as expt:
                 logger.info('Buy order failed - too slow? {}'.format(expt))
             
         else:
-            logger.info('Volume = {} (should say 0),  Winded = {}, max_volume {}'.format(volume,winded, max_volume))
+            logger.debug('Volume = {} (should say 0),  Winded = {}, max_volume {}'.format(volume,winded, max_volume))
     else:
         pass
         #logger.info(f'No arbitrage')
