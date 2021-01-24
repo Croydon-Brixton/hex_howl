@@ -32,3 +32,4 @@ def initialize_logger(logger, log_name=None):
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+    
