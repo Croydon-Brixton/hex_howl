@@ -104,7 +104,7 @@ def accumulate():
         winded = (positions[ibuy] -positions[isell])/1000
         
         paramb = 0.5
-        max_volume =  max_volume * vol_f_const(winded, 0.9)
+        max_volume =  max_volume * vol_f_const(winded, 0.)
         
         volume = min([bbid.price,bask.price,max_volume])
         

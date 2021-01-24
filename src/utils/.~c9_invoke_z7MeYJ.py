@@ -1,6 +1,6 @@
 from src.constants import INSTRUMENTS
 
-class Inventory:
+class I:
     def __init__(self, exchange):
         
         self.exchange = exchange

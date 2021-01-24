@@ -5,10 +5,8 @@ from optibook.synchronous_client import Exchange
 from src.utils.logging_utils import initialize_logger
 from src.constants import INSTRUMENTS
 from src.utils.market_utils import best_ask, best_bid, spread, midquote, get_vitals
-from src.utils.inventory_utils import Inventory
+from src.utils.inventory_utils import OrderBook
  
-# TUNING PARAMETERS:
-UNDERCUT_FACTOR = 0.8
 
 # 1. --- Set up logging ----
 logger = logging.getLogger("bot")
@@ -25,45 +23,17 @@ a = e.connect()
 # 3. --- Define undercutter loop
     # While True
 
-inventory = Inventory(exchange=e)
+order_book = OrderBook(exchange=e)
 
 def undercutter_loop():
     
-    # Update info
-    inventory.update()
+    # Update our order book
+    order_book.update()
+    # Update market price book
     
-    for instrument_id in INSTRUMENTS:
-        price_book = e.get_last_price_book(instrument_id)
     
-        # Check market vitals
-        best_ask, best_bid, spread, midquote = get_vitals(price_book)
-        
-        our_bid_is_best = False
-        if inventory.highest_bid(instrument_id) == best_bid:  # in case of no bid: None (which equals false)
-            our_bid_is_best = True
-        our_ask_is_best = False
-        if inventory.lowest_ask(instrument_id) == best_ask:   # in case of no bid: None (which equals false)
-            our_ask_is_best = True
-            
-        # Calculate bid and ask prices 
-        
-        bid, ask = calculate_bid_and_ask(spread,midquote,undercut_factor=UNDERCUT_FACTOR)
-            
-        if not our_ask_is_best:
-            
-            # update
-            pass
-        else:
-            # keep it that way
-            pass
-        
-        if not our_bid_is_best:
-            # update
-            pass
-        else:
-            # keep it that way
-            pass
-    
+    # Check market vitals
+    best_ask, best_bid, spread, midquote = get_vitals(book)
     
     # If we don't have any order in the book:
         # add new quote 
@@ -79,8 +49,22 @@ def undercutter_loop():
             
     # NEEDS:
         # 1. Checking for market vitals
+        def market_vitals(instrument_id):
+            book = e.get_last_price_book(instrument_id)
+            best_ask, best_bid, spread = get_vitals(book)
+            
+            return best_ask, best_bid, spread, midquote
+            
         
         # 2. Checking for inventory vitals
+
+        def inventory_vitals(instrument_id):
+            
+            order_book.update()
+            
+            
+            return our_ask,our_bid,tightest_spread
+            
             
         # 3. Determining a good bid & ask value depending on 
                 # - our inventoy
