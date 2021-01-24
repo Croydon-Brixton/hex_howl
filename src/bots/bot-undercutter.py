@@ -30,8 +30,8 @@ our_orders = PendingOrders(exchange=e)
 def calculate_bid_and_ask(market_spread, market_midquote, undercut_factor = 0.8):
     """Calculate quote bid and ask values from current market spread and value"""
             
-    bid = market_midquote - market_spread * undercut_factor
-    ask = market_midquote + market_spread * undercut_factor
+    bid = market_midquote - (0.5 * market_spread * undercut_factor)
+    ask = market_midquote + (0.5 * market_spread * undercut_factor)
             
     return bid, ask
 
@@ -39,6 +39,7 @@ def undercutter_loop():
     
     # Update info
     our_orders.update()
+    logger.debug("Updating PendingOrders")
     
     for instrument_id in INSTRUMENTS:
         price_book = e.get_last_price_book(instrument_id)
@@ -48,17 +49,20 @@ def undercutter_loop():
         
         our_bid_is_best = False
         if our_orders.highest_bid(instrument_id) == best_bid:  # in case of no bid: None (which equals false)
+            logger.info("Our bid is highest")
             our_bid_is_best = True
         our_ask_is_best = False
         if our_orders.lowest_ask(instrument_id) == best_ask:   # in case of no bid: None (which equals false)
+            logger.info("Our ask is highest")
             our_ask_is_best = True
             
         # Calculate bid and ask prices 
         
         bid_price, ask_price = calculate_bid_and_ask(spread,midquote,undercut_factor=UNDERCUT_FACTOR)
+        logger.info(f"Using ask-price {ask_price} and bid-price {bid_price} for undercutting.")
         
         #####################
-        volume = 10         #
+        volume = 50         #
         #####################
         
         our_bid_id = our_orders.highest_bid_id(instrument_id)
@@ -67,7 +71,9 @@ def undercutter_loop():
         if not our_bid_is_best:
             # Delete order if already is one, then place new
             if our_bid_id is not None:
+                logger.info(f"Deleting bid {our_bid_id}")
                 delete = e.delete_order(instrument_id, order_id=our_bid_id)
+            logger.info(f"Ordering bid at {bid_price} for {instrument_id}")
             e.insert_order(instrument_id, price=bid_price, volume=volume, side="bid", order_type="limit")
         else:
             # keep it that way
@@ -78,6 +84,8 @@ def undercutter_loop():
             # Delete order if already is one, then place new
             if our_ask_id is not None:
                 delete = e.delete_order(instrument_id, order_id=our_ask_id)
+                logger.info(f"Deleting ask {our_ask_id}")
+            logger.info(f"Ordering ask at {ask_price} for {instrument_id}")
             e.insert_order(instrument_id, price=ask_price, volume=volume, side="ask", order_type="limit")
         else:
             # keep it that way
@@ -136,6 +144,7 @@ while True:
             accumulate()
         dissapate()
         '''
+        time.sleep(0.5)
         undercutter_loop()
         '''
         for instrument_id in instruments:

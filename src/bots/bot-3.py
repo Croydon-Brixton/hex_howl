@@ -103,7 +103,7 @@ def accumulate():
         logger.info('best_ask_B,best_bid_B,spread_B = {}, {}, {}'.format(best_ask_B.price,best_bid_B.price,spread_B))
         logger.info('bbid, bask, ibuy = {}, {}, {}'.format(bbid.price, bask.price, ibuy))
     
-        return    
+        #return    
         
         positions = e.get_positions()
         winded = (positions[ibuy] -positions[isell])/1000
@@ -140,7 +140,7 @@ def accumulate():
                             vol_bought = t.volume
                             
                     sell = e.insert_order(isell, price=bbid.price, volume=vol_bought, side='ask', order_type='ioc')
-                    logger.info('Trade Succeeded sell: volume {}'.format(volume))
+                    logger.info('Trade Succeeded sell: volume {}, sell {}'.format(vol_bought, sell))
                 
                 except Exception as expt:
                     logger.info('Sell order failed - too slow? {}'.format(expt))
