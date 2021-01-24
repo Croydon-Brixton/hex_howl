@@ -3,6 +3,7 @@ from optibook.synchronous_client import Exchange
 import time
 import logging
 from src.utils.logging_utils import initialize_logger
+from src.utils.market_utils import best_ask, best_bid, spread, midquote, get_vitals
 import os 
 import numpy as np
 # 1. --- Set up logging ----
@@ -103,8 +104,8 @@ def accumulate():
         winded = (positions[ibuy] -positions[isell])/1000
         
         paramb = 0.5
-        max_volume = 30
-        max_volume = round(max_volume * vol_f_const(winded, 0.2) * delta)  # 0.1*500 is where it doesn't go any further
+        max_volume = 20
+        max_volume = round(max_volume * vol_f_const(winded, 0.3) * delta)  # 0.1*500 is where it doesn't go any further
         
         volume = min([bbid.volume,bask.volume,max_volume])
         
@@ -121,7 +122,7 @@ def accumulate():
                 
                
                 sell = e.insert_order(isell, price=bbid.price, volume=volume, side='ask', order_type='ioc')
-                logger.info('Trade Succeeded sell: volume {}, {}, credit {}'.format(volume,sell, bbid-bask))
+                logger.info('Trade Succeeded sell: volume {}, {}, credit {}'.format(volume,sell, bbid.price-bask.price))
                 
                 
                 
@@ -140,7 +141,29 @@ def accumulate():
     return
 
 def dissapate():
-    return 
+    
+    pos = e.get_positions()
+    pos_diff = pos['PHILIPS_A']+pos['PHILIPS_B']
+
+    price_book = e.get_last_price_book('PHILIPS_A')
+    best_ask, best_bid, spread, midquote = get_vitals(price_book) # always buy or sell in A
+
+    if pos_diff > 0: # more in A, get rid of a
+        logger.info('Disipating !!! ')
+        side, price = 'ask', best_bid
+        logger.debug(f'More in A {pos_diff}, getting rid {pos}')
+    elif pos_diff < 0: # less in A, buy A
+        logger.info('Disipating !!! ')
+        side, price = 'bid', best_ask
+        logger.debug(f'Less in A {pos_diff}, buying {pos}')
+    else:
+        return True
+
+    volume= min(abs(pos_diff), 5)
+    #logger.debug(f'side : {side}, volume: {volume}, price {price}')
+    
+    e.insert_order('PHILIPS_A', price=price, volume=volume, side=side, order_type='ioc')
+    return False
     
 start = time.time()        
 try:
@@ -161,6 +184,7 @@ def check_positions():
 # 4. --- Start up bot ---
 while True:
     try:
+        s_pnl = e.get_pnl()
         for instrument_id in instruments:
             trades = e.poll_new_trades(instrument_id)
         if check_positions():
@@ -168,6 +192,10 @@ while True:
             accumulate()
         dissapate()
         #time.sleep(5)
+        d_pnl =e.get_pnl() - s_pnl
+        
+        if d_pnl != 0.0:
+            logger.info(f'changei n pnl{e.get_pnl() - s_pnl}')
         '''
         for instrument_id in instruments:
             outstanding = e.get_outstanding_orders(instrument_id)

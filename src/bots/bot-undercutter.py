@@ -6,6 +6,7 @@ from src.utils.logging_utils import initialize_logger
 from src.constants import INSTRUMENTS
 from src.utils.market_utils import best_ask, best_bid, spread, midquote, get_vitals
 from src.utils.inventory_utils import PendingOrders
+import math
  
 # TUNING PARAMETERS:
 UNDERCUT_FACTOR = 0.8
@@ -27,13 +28,46 @@ a = e.connect()
 
 our_orders = PendingOrders(exchange=e)
 
-def calculate_bid_and_ask(market_spread, market_midquote, undercut_factor = 0.8):
+def calculate_bid_and_ask(market_spread, market_midquote, undercut_factor = 0.9):
     """Calculate quote bid and ask values from current market spread and value"""
             
     bid = market_midquote - (0.5 * market_spread * undercut_factor)
     ask = market_midquote + (0.5 * market_spread * undercut_factor)
             
     return bid, ask
+    
+def set_price(instrument_id,max_volume):
+    
+    book = e.get_last_price_book(instrument_id)
+    positions = e.get_positions()
+    position = positions[instrument_id]
+    max_position = 250
+    relative_vol = max_volume
+    
+    if len(book.asks) > 0:
+        pass
+    else:
+        if len(book.bids) > 0:
+            price = book.bids[0].price * 1.01
+            if position > (-max_position):
+                if position < 0:
+                    relative_pos = 1 - abs(position/max_position)
+                    relative_vol = math.floor(max_volume * relative_pos) + 1
+                e.insert_order(instrument_id, price=price, volume=relative_vol, side="ask", order_type="limit")
+    
+    relative_vol = max_volume
+    
+    if len(book.bids) > 0:
+        pass
+    else:
+        if len(book.asks) > 0:
+            price = book.asks[0].price * 0.99
+            if position < max_position:
+                if position > 0:
+                    relative_pos = 1 - (position/max_position)
+                    relative_vol = math.floor(max_volume * relative_pos) + 1
+                e.insert_order(instrument_id, price=price, volume=relative_vol, side="bid", order_type="limit")
+        
 
 def undercutter_loop():
     
@@ -41,9 +75,16 @@ def undercutter_loop():
     our_orders.update()
     logger.debug("Updating PendingOrders")
     
-    positions = e.get_postions()
+    #positions = e.get_postions()
+    #print(positions['PHILIPS_A'])
+    positions = e.get_positions()
     
-    for instrument_id in INSTRUMENTS:
+    instrument_list = ['PHILIPS_B']
+    for instrument_id in instrument_list:
+        max_volume = 20
+        set_price(instrument_id,max_volume)
+        
+    for instrument_id in instrument_list:
         price_book = e.get_last_price_book(instrument_id)
         
         # Check market vitals
@@ -64,8 +105,10 @@ def undercutter_loop():
         logger.info(f"Using ask-price {ask_price} and bid-price {bid_price} for undercutting.")
         
         #####################
-        volume = 20         #
+        max_volume = 20     #
         #####################
+        
+        volume = max_volume
         
         our_bid_id = our_orders.highest_bid_id(instrument_id)
         our_ask_id = our_orders.lowest_ask_id(instrument_id)
@@ -73,7 +116,7 @@ def undercutter_loop():
         # Check our positions
         
         position = positions[instrument_id]
-        logger.info(position)
+        #logger.info(position)
         max_position = 250
         
         
@@ -84,12 +127,17 @@ def undercutter_loop():
                 delete = e.delete_order(instrument_id, order_id=our_bid_id)
             logger.info(f"Ordering bid at {bid_price} for {instrument_id}")
             if position < max_position:
+                if position > 0:
+                    relative_pos = 1 - (position/max_position)
+                    volume = math.floor(volume * relative_pos) + 1 
                 e.insert_order(instrument_id, price=bid_price, volume=volume, side="bid", order_type="limit")
         else:
             # keep it that way
             logger.debug("Our bid is best")
             pass
         
+        max_volume = 20
+        volume = max_volume
         if not our_ask_is_best:
             # Delete order if already is one, then place new
             if our_ask_id is not None:
@@ -97,6 +145,9 @@ def undercutter_loop():
                 logger.info(f"Deleting ask {our_ask_id}")
             logger.info(f"Ordering ask at {ask_price} for {instrument_id}")
             if position > (-max_position):
+                if position < 0:
+                    relative_pos = 1 - abs(position/max_position)
+                    volume = math.floor(volume * relative_pos) + 1
                 e.insert_order(instrument_id, price=ask_price, volume=volume, side="ask", order_type="limit")
         else:
             # keep it that way
@@ -169,3 +220,5 @@ while True:
         pass
 
 logger.info(f'final pnl {e.get_pnl()}')
+
+
