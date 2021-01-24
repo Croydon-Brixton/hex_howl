@@ -4,7 +4,9 @@ class Inventory:
     def __init__(self, exchange):
         
         self.exchange = exchange
-        self.orders = None # current orders
+        self.orders = {}
+        self.bids = {}
+        self.asks = {}
         self.update() 
         
     @staticmethod
@@ -14,9 +16,9 @@ class Inventory:
     def update(self):
         
         for instrument in INSTRUMENTS:
-            orders = list(self.exchange.get_outstanding_orders(instrument).values())
-            self.asks[instrument] = sorted([order if order.side == "ask"], key = x["price"])
-            self.bids[instrument] = sorted([order if order.side == "bid"], key = x["price"])
+            self.orders = list(self.exchange.get_outstanding_orders(instrument).values())
+            self.asks[instrument] = sorted([order for order in self.orders if order.side == "ask"], key = x["price"])
+            self.bids[instrument] = sorted([order for order in self.orders if order.side == "bid"], key = x["price"])
            
         
         self.orders = {instrument: list(self.exchange.get_outstanding_orders(instrument).values()) for instrument in INSTRUMENTS } 
