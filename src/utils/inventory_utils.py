@@ -20,25 +20,32 @@ class Inventory:
             self.bids[instrument] = sorted([order for order in self.orders if order.side == "bid"], key = x["price"])
     
     def highest_bid(self, instrument: str):
-        prices = [order.price for order in self.orders[instrument] if order.side == 'bid']
-        if len(prices) == 0:
+        bids = self.bids[instrument]
+        if len(bids) > 0
+            return bids[-1]["price"]
+        else: 
             return None
-        return max(prices)
         
     def highest_bid_id(self, instrument: str):
-        prices = [order.prices for order in self.orders[instrument] if order.side == 'bid']
-        if len(prices) == 0:
+        bids = self.bids[instrument]
+        if len(bids) > 0
+            return bids[-1]["id"]
+        else: 
             return None
-        return max(prices)
-        
+            
     def lowest_ask(self, instrument: str):
-        prices = [order.price for order in self.orders[instrument] if order.side == 'ask']
-        if len(prices) == 0:
+        asks = self.asks[instrument]
+        if len(asks) > 0
+            return asks[0]["price"]
+        else: 
             return None
-        return min(prices)
         
     def lowest_ask_id(self, instrument: str):
-        
+        asks = self.asks[instrument]
+        if len(asks) > 0
+            return asks[0]["id"]
+        else: 
+            return None
     
     def spread(self,instrument: str):
         lowest_ask = self.lowest_ask(instrument)
@@ -48,10 +55,10 @@ class Inventory:
         return self.lowest_ask(instrument) - self.highest_bid(instrument)
     
     def volume_ask(self, instrument):
-        return sum([order.volume for order in self.orders[instrument] if order.side == 'ask'])
+        return sum([order["volume"] for order in self.asks[instrument]])
         
     def volume_bid(self, instrument):
-        return sum([order.volume for order in self.orders[instrument] if order.side == 'bid'])
+        return sum([order["volume"] for order in self.bids[instrument]])
         
     def orders_in_last_20ms(self):
         pass

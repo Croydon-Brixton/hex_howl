@@ -108,7 +108,7 @@ def accumulate():
         max_volume = 30
         max_volume = round(max_volume * vol_f_const(winded, 0.9))
         
-        volume = min([bbid.price,bask.price,max_volume])
+        volume = min([bbid.volume,bask.volume,max_volume])
         
         logger.debug('Volume: {}, Winded = {}, max_volume {}'.format(volume,winded, max_volume))
         
