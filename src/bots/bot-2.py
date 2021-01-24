@@ -1,24 +1,23 @@
-
-from optibook.synchronous_client import Exchange
+import os
 import time
 import logging
-import logging.handlers
-import os 
+from optibook.synchronous_client import Exchange
+from src.utils.logging_utils import initialize_logger
+from src.constants import INSTRUMENTS
+ 
 
 # 1. --- Set up logging ----
-# Bot logger
 logger = logging.getLogger("bot")
-# Client logger (from optiver)
 client_logger = logging.getLogger("client")
-
-initiate_logger(logger, file_name="bot1")
-initiate_logger(client_logger, file_name="bot1)
-
+initialize_logger(logger, log_name="bot2")
+initialize_logger(client_logger, log_name="bot2")
 logger.info("Logging setup was successful.")
+
 
 # 2. --- Connect to market ---
 e = Exchange()
 a = e.connect()
+
 
 # 3. --- Code components of bot ---
 # Inspect current best bids/asks in each excahnge
@@ -29,17 +28,15 @@ class trade_logger():
         self.env = env
         self.positions = env.get_positions()
         self.prev_trades = []
-        self.instruments = ["PHILIPS_A","PHILIPS_B"]
+        self.instruments = INSTRUMENTS
         
         for instrument_id in self.instruments:
             trades = self.env.poll_new_trades(instrument_id)
         
         
     def log_trade(self):
-        return
+        pass
         
-
-
 def get_spread(instrument_id):
     book = e.get_last_price_book(instrument_id)
     
@@ -49,14 +46,6 @@ def get_spread(instrument_id):
     spread = best_ask.price - best_bid.price
     
     return best_ask,best_bid,spread
-
-def spread(best_ask, best_bid):
-    return best_ask - best_bid
-
-def midquote(best_ask, best_bid):
-    return 0.5 * (best_ask - best_bid)
-    
-instruments = ["PHILIPS_A","PHILIPS_B"]
 
 def accumulate():
     
